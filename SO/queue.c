@@ -9,8 +9,8 @@ int queue_size(queue_t *queue) {
     queue_t * aux = queue;
     int contador;
     
-    if (! queue){
-        fprintf(stderr, "O ponteiro da fila é nulo");
+    if (queue == NULL){
+        fprintf(stderr, "\nO ponteiro da fila é nulo : queue_size()\n");
         return 0;
     }
 
@@ -36,31 +36,33 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
 
     queue_t *primeiro, *aux;
 
-    printf("%s: [", name);
+    printf("\n%s: [", name);
 
     //Se o ponteiro não é nulo
     if (! queue) {
-        fprintf(stderr, "O ponteiro da fila é nulo");
-        printf("]");
+        fprintf(stderr, "\nO ponteiro da fila é nulo");
+        printf("]\n");
         return;
     }
 
     //Se a lista é vazia
     if (! queue_size(queue)){
-        printf("]");
+        fprintf(stderr, "\nA lista é vazia");
+        printf("]\n");
         return;
     }
 
     primeiro = queue;
     aux = queue;
-    while (aux != primeiro) {
-        print_elem(aux->prev);
-        printf("<");
-        print_elem(aux);
-        printf(">");
-        print_elem(aux->next);
+    print_elem(aux);
+    printf(" ");
+    while (aux->next != primeiro) {
         aux = aux->next;
+        print_elem(aux);
+        printf(" ");
     }
+    printf("]\n");
+    return;
 }
 
 // Insere um elemento no final da fila.
@@ -112,35 +114,46 @@ int queue_remove (queue_t **queue, queue_t *elem){
 
     //A fila é nula
     if (! queue) {
-        fprintf(stderr, "O ponteiro da fila é nulo");
+        fprintf(stderr, "\nO ponteiro da fila é nulo");
         return -1;
     }
 
     //O elemento é nulo
     if (! elem){
-        fprintf(stderr, "O ponteiro do elemento é nulo");
+        fprintf(stderr, "\nO ponteiro do elemento é nulo");
         return -2;
     }
 
     //A fila não tem nenhum elemento
     if (! queue_size(*queue)) {
-        fprintf(stderr, "A fila está vazia");
+        fprintf(stderr, "\nA fila está vazia");
         return -3;
     }
 
     //A fila tem um elemento e o unico elemento é o que você quer remover
-    if (queue_size(*queue) == 1 && *queue == elem) { 
-        (*queue)->next = NULL;
-        (*queue)->prev = NULL;
-        *queue = NULL;
-        return 1;
+    if ((*queue) == elem) {
+        if (queue_size(*queue) == 1) {
+            (*queue)->next = NULL;
+            (*queue)->prev = NULL;
+            *queue = NULL;
+            return 1;
+        }
+        else {
+            queue_t *aux = *queue;
+            *queue = (*queue)->next;
+            (*queue)->prev = aux->prev;
+            (*queue)->prev->next = (*queue);
+            aux->next = NULL;
+            aux->prev = NULL;
+            return 1;
+        }
     }
-
+    
     //Caso geral
     queue_t *atual = *queue;
     queue_t *remover = NULL;
 
-    while (! atual->next == *queue) {
+    while (! (atual->next == *queue)) {
         if (atual == elem)
             remover = atual;
         atual = atual->next;
