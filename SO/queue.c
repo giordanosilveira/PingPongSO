@@ -10,7 +10,7 @@ int queue_size(queue_t *queue) {
     int contador;
     
     if (queue == NULL){
-        fprintf(stderr, "\nO ponteiro da fila é nulo : queue_size()\n");
+        fprintf(stderr, "O ponteiro da fila é nulo : queue_size()\n");
         return 0;
     }
 
@@ -40,14 +40,14 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
 
     //Se o ponteiro não é nulo
     if (! queue) {
-        fprintf(stderr, "\nO ponteiro da fila é nulo");
+        fprintf(stderr, "O ponteiro da fila é nulo\n");
         printf("]\n");
         return;
     }
 
     //Se a lista é vazia
     if (! queue_size(queue)){
-        fprintf(stderr, "\nA lista é vazia");
+        fprintf(stderr, "A lista é vazia\n");
         printf("]\n");
         return;
     }
@@ -59,7 +59,8 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
     while (aux->next != primeiro) {
         aux = aux->next;
         print_elem(aux);
-        printf(" ");
+        if (! (aux->next == primeiro))
+            printf(" ");
     }
     printf("]\n");
     return;
@@ -75,13 +76,18 @@ int queue_append (queue_t **queue, queue_t *elem) {
 
     queue_t *ultimo;
     
-    if (! queue)
+    if (! queue) {
+        fprintf(stderr, "O ponteiro da fila é nulo: queue_append()\n");
         return -1;
+    }
     
-    if (! elem)
+    if (! elem) {
+        fprintf(stderr, "O ponteiro do elemento é nulo: queue_append()\n");
         return -2;
+    }
 
     if (elem->next != NULL || elem->prev != NULL) {
+        fprintf(stderr, "Os ponteiros next ou prev do elemento não são nulos: queue_append()\n");
         return -3;
     }
 
@@ -114,19 +120,19 @@ int queue_remove (queue_t **queue, queue_t *elem){
 
     //A fila é nula
     if (! queue) {
-        fprintf(stderr, "\nO ponteiro da fila é nulo");
+        fprintf(stderr, "O ponteiro da fila é nulo: queue_remove()\n");
         return -1;
     }
 
     //O elemento é nulo
     if (! elem){
-        fprintf(stderr, "\nO ponteiro do elemento é nulo");
+        fprintf(stderr, "O ponteiro do elemento é nulo: queue_remove()\n");
         return -2;
     }
 
     //A fila não tem nenhum elemento
     if (! queue_size(*queue)) {
-        fprintf(stderr, "\nA fila está vazia");
+        fprintf(stderr, "A fila está vazia: queue_remove()\n");
         return -3;
     }
 
@@ -162,7 +168,7 @@ int queue_remove (queue_t **queue, queue_t *elem){
         remover = atual;
 
     if (! remover){
-        fprintf(stderr, "O elemento não está nessa fila");
+        fprintf(stderr, "O elemento não está nessa fila: queue_remove()\n");
         return -4;
     }
     
