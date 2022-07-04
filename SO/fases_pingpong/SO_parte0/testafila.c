@@ -145,7 +145,6 @@ int main (int argc, char **argv, char **envp)
    assert (queue_size ((queue_t*) fila0) == N) ;
 
    printf ("Testes de insercao funcionaram!\n") ;
-   //queue_print("VASCO", (queue_t*) fila0, print_elem);
 
    // PARTE 2: queue_remove ====================================================
 
