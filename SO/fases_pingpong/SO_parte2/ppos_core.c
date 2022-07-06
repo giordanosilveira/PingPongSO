@@ -14,8 +14,6 @@ void ppos_init () {
     printf("ppos_init: inicializando estruturas\n");
     #endif
 
-    char *stack;
-
     setvbuf(stdout, 0, _IONBF, 0);
 
     //Inicializa função main

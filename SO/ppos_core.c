@@ -1,11 +1,15 @@
 #include "ppos.h"
+#include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 task_t *current_task;
 task_t *main_task;
 task_t *old_task;
+task_t *dispacher;
+task_t *ready_tasks;
 
+int user_tasks = 0;
 int current_id = 0;
 
 void ppos_init () {
@@ -56,6 +60,10 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg) {
         fprintf(stderr, "Erro ao alocar a stack para o contexto da tarefa: %d\n", current_id + 1);
         return -1;
     }
+
+    //Colocar as tarefas dentro da fila
+    //Incrementar o user_tasks
+    //task->status = READY
 
     //Inicializa as variáveis usadas para a troca de contexto
     context.uc_stack.ss_sp = stack;
@@ -124,5 +132,8 @@ int task_id(){
         return -1;
     }
     return current_task->id;
+}
+
+void task_yield() {
 
 }
