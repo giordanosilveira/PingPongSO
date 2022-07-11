@@ -32,10 +32,12 @@ void print_elem (void *ptr)
  */
 void init_struct_task(task_t *task){
 
+    //Inicializa algumas estruturas internas
     task->id = current_id;
     task->next = task->prev = NULL;
     task->status = READY;
 
+    //Incrementa o current_id
     current_id++;
     #ifdef DEBUG
     printf("init_struct_task(): current_id %d\n", current_id);
@@ -43,10 +45,18 @@ void init_struct_task(task_t *task){
 
 }
 
+/**
+ * @brief Escolhe a próxima tarefa a ser executada.
+ * NESTE CASO, a primeira da fila (i.e FIFO).
+ * 
+ * @return task_t* : A próxima tarefa a ser executada.
+ */
 task_t* escalonador () {
 
     task_t *aux;
 
+    //A próxima tafera é a próxima da fila.
+    //Rodo a lista em torno dela.
     aux = ready_tasks;
     ready_tasks = ready_tasks->next;
     
@@ -66,22 +76,34 @@ task_t* escalonador () {
 void dispatcher () {
 
     task_t *next_task;
+
+    //Enquanto tem tarefa dos usuário para executar
     while (user_tasks) {
         
+        //seleciona a próxima tarefa
         next_task = escalonador();
+
+        //verifica se ela existe
         if (next_task) {
         
             #ifdef DEBUG
             printf("dispatcher() : indo para a tarefa -> %d\n", next_task->id);
             #endif
 
+            //Se não conseguiu trocar a tarefa da uma mensagem de erro
+            //e aborta o programa
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
 
+            //Verifica o estado da tarefa após executar
             switch (next_task->status){
+
+                //Caso ela esteja finalizada
                 case FINISHED:
+
+                    //Retira ela da fila
                     if(! queue_remove((queue_t **)(&ready_tasks), (queue_t*)(next_task)))
                         exit(1);
                     break;
@@ -119,18 +141,20 @@ void ppos_init () {
         exit(1);
     }
 
+    //inicializa tarefa dispatcher
     dispatcher_task = malloc(sizeof(task_t)*1);
     if (! dispatcher_task){
         fprintf(stderr, "O ponteiro do dispatcher não pode ser inicializado\n");
         exit(1);
     }
     
+    //inicializa estrutas internas da task main e dispatcher
     init_struct_task(main_task);
     task_create(dispatcher_task, dispatcher, NULL);
     
     ready_tasks = NULL;
 
-    
+    //tarefa atual é a main
     current_task = main_task;
 }
 
@@ -176,8 +200,11 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg) {
 
     //O contexto da tarefa atual recebe o contexto específicado
     task->context = context;
+
+    //Inicializa estruturas internas da tarefa criada
     init_struct_task(task);
 
+    //Se ela não for o próprio dispatcher, coloca ela na lista
     if (task != dispatcher_task){
         queue_append((queue_t**)(&ready_tasks), (queue_t*)(task));
         user_tasks++;
@@ -203,9 +230,12 @@ int task_switch (task_t *task) {
         return -1;
     }
 
+    //Salva a tarefa antiga
+    //A tarefa atual é a que será executada no momento
     old_task = current_task;
     current_task = task;
 
+    //Troca os contextos
     if (swapcontext(&(old_task->context), &(task->context)) == -1) {
         fprintf(stderr, "Erro ao trocar contexto\n");
         return -1;
@@ -226,13 +256,16 @@ void task_exit(int exit_code){
     printf("tast_exit: tarefa %d sendo encerrada\n", current_task->id);
     #endif
 
+    //Se foi finalizada com um zero a tarefa finalizou
     if (exit_code == 0) {
         current_task->status = FINISHED;
         user_tasks--;
     }
 
+    //Salva a tarefa que foi finalizada
     old_task = current_task;
     
+    //Caso a tarefa finalizada seja o dispatcher, retorna para a main
     if (current_task == dispatcher_task) {
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
@@ -240,6 +273,7 @@ void task_exit(int exit_code){
         }
     }
 
+    //Caso não, retorna para a task dispatcher
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
@@ -257,6 +291,7 @@ int task_id(){
     printf("task_id()");
     #endif
 
+    //Testa para ver se a current_task é válida
     if (! current_task){
         fprintf(stderr, "Tarefa atual nula : task_id()\n");
         return -1;
@@ -264,13 +299,21 @@ int task_id(){
     return current_task->id;
 }
 
+/**
+ * @brief O Controle é passado para a task dispatcher
+ * 
+ */
 void task_yield() {
 
     #ifdef DEBUG
     printf("task_yield(): tarefa atual: %d\n", current_task->id);
     #endif
 
+    //indica que a task main esta parada e que a task dispatcher
+    //está pronta para executar 
     current_task->status = STOP;
     dispatcher_task->status = READY;
+
+    //Troca o contexto
     task_switch(dispatcher_task);
 }
