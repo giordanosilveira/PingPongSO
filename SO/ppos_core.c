@@ -20,8 +20,8 @@ void print_elem (void *ptr)
    if (!elem)
       return ;
 
-   printf (" %d>", elem->id) ;
-   elem->next ? printf ("%d", elem->next->id) : printf ("*") ;
+   printf ("%d ", elem->id) ;
+   //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
 }
 
 /**
@@ -36,6 +36,8 @@ void init_struct_task(task_t *task){
     task->id = current_id;
     task->next = task->prev = NULL;
     task->status = READY;
+    task_setprio(task, 0);
+    task->dinamic_prio = task->priority;
 
     //Incrementa o current_id
     current_id++;
@@ -47,25 +49,43 @@ void init_struct_task(task_t *task){
 
 /**
  * @brief Escolhe a próxima tarefa a ser executada.
- * NESTE CASO, a primeira da fila (i.e FIFO).
+ * NESTE CASO, a tarefa mais prioritaria da fila (i.e menor valor).
  * 
  * @return task_t* : A próxima tarefa a ser executada.
  */
 task_t* escalonador () {
 
-    task_t *aux;
+    task_t *aux = ready_tasks;
+    task_t *task_min_priority = aux;
 
-    //A próxima tafera é a próxima da fila.
-    //Rodo a lista em torno dela.
-    aux = ready_tasks;
-    ready_tasks = ready_tasks->next;
-    
     #ifdef DEBUG
-    printf("escalonador(): proxima tarefa %d = %d\n", aux->id, ready_tasks->prev->id);
-    queue_print("[",(queue_t *)(ready_tasks->prev),print_elem);
+    printf("INICIO escalonador(): ultima tarefa -> %d\n", old_task->id);
     #endif
 
-    return aux;
+    aux = ready_tasks;
+    while (aux->next != ready_tasks){
+        if (aux->next->dinamic_prio < task_min_priority->dinamic_prio){
+            task_min_priority = aux->next;
+        }   
+        aux = aux->next;
+    }
+
+    #ifdef DEBUG
+    printf("INICIO escalonador(): ultima tarefa -> %d\n", old_task->id);
+    #endif
+
+    aux = ready_tasks;
+    while (aux->next != ready_tasks) {
+        if (aux->next != task_min_priority)
+            aux->next->dinamic_prio += TASK_AGING; 
+        aux = aux->next;
+    }
+
+    #ifdef DEBUG
+    printf("escalonador(): tarefa->%d prioridade->%d\n", task_min_priority->id, task_min_priority->dinamic_prio);
+    #endif
+    //task_min_priority->dinamic_prio = task_min_priority->priority;
+    return task_min_priority;
 
 }
 
@@ -213,6 +233,42 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg) {
 }
 
 /**
+ * @brief Define uma nova prioridade para a
+ * tarefa passada como argumento.
+ * 
+ * @param task (task_t*) : Uma tarefa.
+ * @param prio (int) : Nova prioridade da tarefa.
+ */
+void task_setprio(task_t *task, int prio){
+    //Se task for nula, muda a prioridade da tarefa corrente
+    if (! task)
+        current_task->priority = prio;
+
+    //Senão, muda a tarefa passada no argumento
+    task->priority = task->dinamic_prio = prio;
+}
+
+
+/**
+ * @brief Retorna a prioridade da tarefa passada
+ * como argumento.
+ * 
+ * @param task (task_t*) : Uma tarefa.
+ * @return int : Prioridade da tarefa.
+ */
+int task_getprio(task_t * task){
+
+    //Se task for nula, retorna a prioridade da tarefa corrente
+    if (! task)
+        return current_task->priority;
+    
+    //Senão, retorna a prioridade da tarefa passada
+    return task->priority;
+
+}
+
+
+/**
  * @brief Troca a tarefa atual com a passada no argumento
  *
  * @param task (_task_t*_) | Tarefa a ser executada
@@ -307,6 +363,7 @@ void task_yield() {
 
     #ifdef DEBUG
     printf("task_yield(): tarefa atual: %d\n", current_task->id);
+    queue_print("[",(queue_t*)(ready_tasks),print_elem);
     #endif
 
     //indica que a task main esta parada e que a task dispatcher

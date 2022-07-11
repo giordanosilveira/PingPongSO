@@ -10,6 +10,7 @@
 #include <ucontext.h>		// biblioteca POSIX de trocas de contexto
 
 #define STACKSIZE 64*1024
+#define TASK_AGING -1
 #define READY 1
 #define STOP 2
 #define FINISHED 3
@@ -21,6 +22,8 @@ typedef struct task_t
   int id ;				// identificador da tarefa
   ucontext_t context ;			// contexto armazenado da tarefa
   short status ;			// pronta, rodando, suspensa, ...
+  int priority;     //Prioridade estática (inicial)
+  int dinamic_prio; //Prioridade dinâmica
   short preemptable ;			// pode ser preemptada?
    // ... (outros campos serão adicionados mais tarde)
 } task_t ;
