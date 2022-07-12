@@ -42,11 +42,16 @@ void init_struct_task(task_t *task){
     #endif
 
 }
-
+/**
+ * @brief Escolhe uma tarefa para ser executada.
+ * NESTE CASO, a próxima tarefa da fila. FIFO
+ *
+ */
 task_t* escalonador () {
 
     task_t *aux;
 
+    // Simplesmente escolhe o próximo da fila. 
     aux = ready_tasks;
     ready_tasks = ready_tasks->next;
     
@@ -68,19 +73,26 @@ void dispatcher () {
     task_t *next_task;
     while (user_tasks) {
         
+        //Escolhe a próxima tarefa
         next_task = escalonador();
+
+        //Verifica se ela não é nula
         if (next_task) {
         
             #ifdef DEBUG
             printf("dispatcher() : indo para a tarefa -> %d\n", next_task->id);
             #endif
 
+            //Troca para a tarefa e testa para ver se trocou
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
 
+            //Verifica o status da tarefa após a execução
             switch (next_task->status){
+
+                //Se ela terminou, remove ela da fila
                 case FINISHED:
                     if(! queue_remove((queue_t **)(&ready_tasks), (queue_t*)(next_task)))
                         exit(1);
@@ -119,6 +131,7 @@ void ppos_init () {
         exit(1);
     }
 
+    //Inicializa 
     dispatcher_task = malloc(sizeof(task_t)*1);
     if (! dispatcher_task){
         fprintf(stderr, "O ponteiro do dispatcher não pode ser inicializado\n");
