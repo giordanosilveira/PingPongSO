@@ -211,14 +211,18 @@ int task_switch (task_t *task) {
     printf("INICIO: task_switch(): trocando contexto %d -> %d\n", current_task->id, task->id);
     #endif
     
+    //Verifica se a tarefa é nula
     if (! task) {
         fprintf(stderr, "O ponteiro da tarefa é nulo: task_switch() \n");
         return -1;
     }
 
+    //Salva a tarefa antiga e define a corrente
     old_task = current_task;
     current_task = task;
 
+    //Troca os contextos
+    //E verifica se trocou
     if (swapcontext(&(old_task->context), &(task->context)) == -1) {
         fprintf(stderr, "Erro ao trocar contexto\n");
         return -1;
@@ -239,13 +243,17 @@ void task_exit(int exit_code){
     printf("tast_exit: tarefa %d sendo encerrada\n", current_task->id);
     #endif
 
+    //Define o status da tarefa quando ela terminou
     if (exit_code == 0) {
         current_task->status = FINISHED;
         user_tasks--;
     }
 
+    //Salva a tarefa que estava executando
     old_task = current_task;
     
+    //Verifica se foi o dispatcher que pediu para ser executado
+    //Se sim, troca para a tarefa main
     if (current_task == dispatcher_task) {
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
@@ -253,6 +261,7 @@ void task_exit(int exit_code){
         }
     }
 
+    //Senão, troca para a tarefa dispatcher
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
@@ -270,10 +279,14 @@ int task_id(){
     printf("task_id()");
     #endif
 
+    //Testa se a tarefa corrente é nula
+    //Se sim, mostra um erro e retorna -1
     if (! current_task){
         fprintf(stderr, "Tarefa atual nula : task_id()\n");
         return -1;
     }
+
+    //Senão, retorna o id da tarefa
     return current_task->id;
 }
 
@@ -283,6 +296,8 @@ void task_yield() {
     printf("task_yield(): tarefa atual: %d\n", current_task->id);
     #endif
 
+    //define o status da tarefa atual como PARADA
+    //E do dispatcher como PRONTA 
     current_task->status = STOP;
     dispatcher_task->status = READY;
     task_switch(dispatcher_task);
