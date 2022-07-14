@@ -2,6 +2,8 @@
 #include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/time.h>
 
 task_t *current_task;
 task_t *main_task;
@@ -9,12 +11,15 @@ task_t *old_task;
 task_t *dispatcher_task;
 task_t *ready_tasks;
 
+struct sigaction action;
+struct itimerval timer;
+
+
 int user_tasks = 0;
 int current_id = 0;
 
 // imprime na tela um elemento da fila (chamada pela função queue_print)
-void print_elem (void *ptr)
-{
+void print_elem (void *ptr) {
    task_t *elem = ptr ;
 
    if (!elem)
@@ -22,6 +27,46 @@ void print_elem (void *ptr)
 
    printf ("%d ", elem->dinamic_prio) ;
    //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
+}
+
+/**
+ * @brief Inicializa a estrutura que vai tratar da ação
+ * do temporizador.
+ *
+ */
+void init_signal_handler () {
+    
+    // registra a ação para o sinal de timer SIGALRM
+    action.sa_handler = tratador ;
+    sigemptyset (&action.sa_mask) ;
+    action.sa_flags = 0 ;
+    if (sigaction (SIGALRM, &action, 0) < 0)
+    {
+      perror ("Erro em sigaction: ") ;
+      exit (1) ;
+    }
+    
+}
+
+/**
+ * @brief Inicializa o temporizador em 1 ms 
+ *
+ */
+void init_timer(){
+    
+    // ajusta valores do temporizador
+    timer.it_value.tv_usec = TEMPORIZADOR ;         // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec  = 0 ;                    // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = TEMPORIZADOR ;      // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec  = 0 ;                 // disparos subsequentes, em segundos
+    
+    // arma o temporizador ITIMER_REAL (vide man setitimer)
+    if (setitimer (ITIMER_REAL, &timer, 0) < 0)
+    {
+      perror ("Erro em setitimer: ") ;
+      exit (1) ;
+    }
+
 }
 
 /**
@@ -38,12 +83,30 @@ void init_struct_task(task_t *task){
     task->status = READY;
     task_setprio(task, 0);
     task->dinamic_prio = task->priority;
+    task->task_timer = TASK_TIMER;
+
+    if (task != main_task && task != dispatcher_task)
+        task->preemptable = YES;
+    else
+        task->preemptable = NO;
 
     //Incrementa o current_id
     current_id++;
     #ifdef DEBUG
     printf("init_struct_task(): current_id %d\n", current_id);
     #endif
+
+}
+
+void tratador () {
+
+    if (current_task->preemptable) {
+        current_task->task_timer--;
+        if (! current_task->task_timer) {
+            current_task->task_timer = TASK_TIMER;
+            task_yield();
+        }
+    }
 
 }
 
@@ -54,6 +117,8 @@ void init_struct_task(task_t *task){
  * @return task_t* : A próxima tarefa a ser executada.
  */
 task_t* escalonador () {
+
+    //Pegar o primeiro da fila novamente;
 
     task_t *aux = ready_tasks;
     task_t *task_min_priority = aux;
@@ -143,6 +208,42 @@ void dispatcher () {
 }
 
 /**
+ * @brief Define uma nova prioridade para a
+ * tarefa passada como argumento.
+ * 
+ * @param task (task_t*) : Uma tarefa.
+ * @param prio (int) : Nova prioridade da tarefa.
+ */
+void task_setprio(task_t *task, int prio){
+    //Se task for nula, muda a prioridade da tarefa corrente
+    if (! task)
+        current_task->priority = prio;
+
+    //Senão, muda a tarefa passada no argumento
+    task->priority = task->dinamic_prio = prio;
+}
+
+/**
+ * @brief Retorna a prioridade da tarefa passada
+ * como argumento.
+ * 
+ * @param task (task_t*) : Uma tarefa.
+ * @return int : Prioridade da tarefa.
+ */
+int task_getprio(task_t * task){
+
+    //Se task for nula, retorna a prioridade da tarefa corrente
+    if (! task)
+        return current_task->priority;
+    
+    //Senão, retorna a prioridade da tarefa passada
+    return task->priority;
+
+}
+
+
+
+/**
  * @brief Inicializa as variáveis 
  * do Sistema Operacional.
  */
@@ -183,6 +284,9 @@ void ppos_init () {
 
     //tarefa atual é a main
     current_task = main_task;
+
+    init_signal_handler();
+    init_timer();
 }
 
 /**
@@ -238,42 +342,6 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg) {
     }
     return current_id;
 }
-
-/**
- * @brief Define uma nova prioridade para a
- * tarefa passada como argumento.
- * 
- * @param task (task_t*) : Uma tarefa.
- * @param prio (int) : Nova prioridade da tarefa.
- */
-void task_setprio(task_t *task, int prio){
-    //Se task for nula, muda a prioridade da tarefa corrente
-    if (! task)
-        current_task->priority = prio;
-
-    //Senão, muda a tarefa passada no argumento
-    task->priority = task->dinamic_prio = prio;
-}
-
-
-/**
- * @brief Retorna a prioridade da tarefa passada
- * como argumento.
- * 
- * @param task (task_t*) : Uma tarefa.
- * @return int : Prioridade da tarefa.
- */
-int task_getprio(task_t * task){
-
-    //Se task for nula, retorna a prioridade da tarefa corrente
-    if (! task)
-        return current_task->priority;
-    
-    //Senão, retorna a prioridade da tarefa passada
-    return task->priority;
-
-}
-
 
 /**
  * @brief Troca a tarefa atual com a passada no argumento
