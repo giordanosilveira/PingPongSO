@@ -12,7 +12,7 @@ int queue_size(queue_t *queue) {
     int contador;
     
     if (queue == NULL){
-        fprintf(stderr, "O ponteiro da fila é nulo : queue_size()\n");
+        //fprintf(stderr, "O ponteiro da fila é nulo : queue_size()\n");
         return 0;
     }
 

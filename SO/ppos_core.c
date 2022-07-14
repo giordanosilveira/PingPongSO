@@ -29,6 +29,18 @@ void print_elem (void *ptr) {
    //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
 }
 
+void tratador () {
+
+    if (current_task->preemptable) {
+        current_task->task_timer--;
+        if (! current_task->task_timer) {
+            current_task->task_timer = TASK_TIMER;
+            task_yield();
+        }
+    }
+
+}
+
 /**
  * @brief Inicializa a estrutura que vai tratar da ação
  * do temporizador.
@@ -98,18 +110,6 @@ void init_struct_task(task_t *task){
 
 }
 
-void tratador () {
-
-    if (current_task->preemptable) {
-        current_task->task_timer--;
-        if (! current_task->task_timer) {
-            current_task->task_timer = TASK_TIMER;
-            task_yield();
-        }
-    }
-
-}
-
 /**
  * @brief Escolhe a próxima tarefa a ser executada.
  * NESTE CASO, a tarefa mais prioritaria da fila (i.e menor valor).
@@ -118,45 +118,18 @@ void tratador () {
  */
 task_t* escalonador () {
 
-    //Pegar o primeiro da fila novamente;
+    task_t *aux;
 
-    task_t *aux = ready_tasks;
-    task_t *task_min_priority = aux;
-
+    // Simplesmente escolhe o próximo da fila. 
+    aux = ready_tasks;
+    ready_tasks = ready_tasks->next;
+    
     #ifdef DEBUG
-    printf("INICIO escalonador(): ultima tarefa -> %d\n", old_task->id);
+    printf("escalonador(): proxima tarefa %d = %d\n", aux->id, ready_tasks->prev->id);
+    queue_print("fila atual ->",(queue_t *)(ready_tasks->prev),print_elem);
     #endif
 
-    //Percorre a fila de tarefas e procura a menos prioritária
-    aux = ready_tasks;
-
-    //Sempre verifica a próxima tarefa
-    while (aux->next != ready_tasks){
-        if (aux->next->dinamic_prio < task_min_priority->dinamic_prio){
-            task_min_priority = aux->next;
-        }   
-        aux = aux->next;
-    }
-
-    #ifdef DEBUGESCALONADOR
-    queue_print("escalonador() fila ->", (queue_t *)(ready_tasks), print_elem);
-    #endif
-
-    //Percorre a fila e diminui as prioridade dinâmicas das tarefas
-    aux = ready_tasks;
-    while (aux->next != ready_tasks) {
-        if (aux->next != task_min_priority)
-            aux->next->dinamic_prio += TASK_AGING; 
-        aux = aux->next;
-    }
-    //Diminuição da prioridade da primeira tarefa
-    if (aux->next != task_min_priority) {
-        aux->next->dinamic_prio += TASK_AGING;
-    }
-
-
-    //task_min_priority->dinamic_prio = task_min_priority->priority;
-    return task_min_priority;
+    return aux;
 
 }
 
