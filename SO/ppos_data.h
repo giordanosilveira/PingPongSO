@@ -1,3 +1,5 @@
+//GRR20197154 Giordano Henrique Silveira
+
 // PingPongOS - PingPong Operating System
 // Prof. Carlos A. Maziero, DINF UFPR
 // Versão 1.4 -- Janeiro de 2022
@@ -10,7 +12,14 @@
 #include <ucontext.h>		// biblioteca POSIX de trocas de contexto
 
 #define STACKSIZE 64*1024
+
 #define TASK_AGING -1
+#define TEMPORIZADOR 1000
+#define TASK_TIMER 20
+
+#define YES 1
+#define NO 0
+
 #define READY 1
 #define STOP 2
 #define FINISHED 3
@@ -25,6 +34,8 @@ typedef struct task_t
   int priority;     //Prioridade estática (inicial)
   int dinamic_prio; //Prioridade dinâmica
   short preemptable ;			// pode ser preemptada?
+
+  int task_timer;
    // ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
