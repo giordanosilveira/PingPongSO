@@ -10,7 +10,6 @@ task_t *main_task;
 task_t *old_task;
 task_t *dispatcher_task;
 task_t *ready_tasks;
-unsigned int global_clock;
 
 struct sigaction action;
 struct itimerval timer;
@@ -35,8 +34,6 @@ void print_elem (void *ptr) {
  *
  */
 void tratador () {
-
-    global_clock++;
 
     //Se a tarefa for preemptavel
     if (current_task->preemptable) {
@@ -78,9 +75,6 @@ void init_signal_handler () {
  */
 void init_timer(){
     
-    //Ajusta o relogío global do sistema
-    global_clock = 0;
-
     // ajusta valores do temporizador
     timer.it_value.tv_usec = TEMPORIZADOR ;         // primeiro disparo, em micro-segundos
     timer.it_value.tv_sec  = 0 ;                    // primeiro disparo, em segundos
@@ -111,11 +105,6 @@ void init_struct_task(task_t *task){
     task_setprio(task, 0);
     task->dinamic_prio = task->priority;
     task->task_timer = TASK_TIMER;
-
-    task->activations = 0;
-    task->exec_time = systime();
-    task->processor_time = systime();
-
 
     if (task != main_task && task != dispatcher_task)
         task->preemptable = YES;
@@ -204,13 +193,10 @@ void dispatcher () {
 
             //Se não conseguiu trocar a tarefa da uma mensagem de erro
             //e aborta o programa
-
-            next_task->exec_time = systime();
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
-            next_task->exec_time += (systime() - next_task->exec_time);
 
             //Verifica o estado da tarefa após executar
             switch (next_task->status){
@@ -422,9 +408,6 @@ void task_exit(int exit_code){
     
     //Caso a tarefa finalizada seja o dispatcher, retorna para a main
     if (current_task == dispatcher_task) {
-
-        //Uso o dispatcher_task para ficar mais claro o que estou mudando
-        dispatcher_task->processor_time += (systime() - dispatcher_task->processor_time);
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
@@ -432,7 +415,6 @@ void task_exit(int exit_code){
     }
 
     //Caso não, retorna para a task dispatcher
-    current_task->processor_time += (systime() - current_task->processor_time);
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
@@ -476,13 +458,4 @@ void task_yield() {
 
     //Troca o contexto
     task_switch(dispatcher_task);
-}
-
-/**
- * @brief Retorna o relogio globa do sistema
- * 
- * @return (unsigned int) : relogío do sistema 
- */
-unsigned int systime () {
-    return global_clock;
 }

@@ -28,14 +28,18 @@
 typedef struct task_t
 {
   struct task_t *prev, *next ;		// ponteiros para usar em filas
-  int id ;				// identificador da tarefa
-  ucontext_t context ;			// contexto armazenado da tarefa
-  short status ;			// pronta, rodando, suspensa, ...
-  int priority;     //Prioridade estática (inicial)
-  int dinamic_prio; //Prioridade dinâmica
-  short preemptable ;			// pode ser preemptada?
-
+  int id ;				                // identificador da tarefa
+  ucontext_t context ;			      // contexto armazenado da tarefa
+  short status ;			            // pronta, rodando, suspensa, ...
+  int priority;                   // Prioridade estática (inicial)
+  int dinamic_prio;               // Prioridade dinâmica
+  short preemptable ;			        // pode ser preemptada?
+  
   int task_timer;
+  
+  unsigned int activations;       // Números de ativações que a tarefa teve
+  unsigned int exec_time;         // Tempo de execução
+  unsigned int processor_time;    // Tempo de processamento total  
    // ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
