@@ -205,12 +205,11 @@ void dispatcher () {
             //Se não conseguiu trocar a tarefa da uma mensagem de erro
             //e aborta o programa
 
-            next_task->exec_time = systime();
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
-            next_task->exec_time += (systime() - next_task->exec_time);
+            next_task->processor_time += (systime() - next_task->processor_time);
 
             //Verifica o estado da tarefa após executar
             switch (next_task->status){
@@ -424,7 +423,9 @@ void task_exit(int exit_code){
     if (current_task == dispatcher_task) {
 
         //Uso o dispatcher_task para ficar mais claro o que estou mudando
-        dispatcher_task->processor_time += (systime() - dispatcher_task->processor_time);
+        // dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time)
+        printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
+        // dispatcher_task->processor_time += (systime() - dispatcher_task->processor_time);
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
@@ -432,7 +433,9 @@ void task_exit(int exit_code){
     }
 
     //Caso não, retorna para a task dispatcher
-    current_task->processor_time += (systime() - current_task->processor_time);
+    // current_task->processor_time += (systime() - current_task->processor_time);
+    current_task->exec_time += (systime() - current_task->exec_time)
+    printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);

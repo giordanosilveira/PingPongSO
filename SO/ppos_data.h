@@ -38,7 +38,7 @@ typedef struct task_t
   int task_timer;
   
   unsigned int activations;       // Números de ativações que a tarefa teve
-  unsigned int exec_time;         // Tempo de execução
+  unsigned int exec_time;         // Tempo de total de execução
   unsigned int processor_time;    // Tempo de processamento total  
    // ... (outros campos serão adicionados mais tarde)
 } task_t ;
