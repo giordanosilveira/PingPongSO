@@ -40,7 +40,8 @@ void tratador () {
 
     //Se a tarefa for preemptavel
     if (current_task->preemptable) {
-        
+
+        current_task->processor_time++;
         //Diminui o tick dele
         current_task->task_timer--;
 
@@ -157,10 +158,6 @@ task_t* escalonador () {
         aux = aux->next;
     }
 
-    #ifdef DEBUGESCALONADOR
-    queue_print("escalonador() fila ->", (queue_t *)(ready_tasks), print_elem);
-    #endif
-
     //Percorre a fila e diminui as prioridade dinâmicas das tarefas
     aux = ready_tasks;
     while (aux->next != ready_tasks) {
@@ -198,21 +195,14 @@ void dispatcher () {
 
         //verifica se ela existe
         if (next_task) {
-        
-            #ifdef DEBUG
-            printf("dispatcher() : indo para a tarefa -> %d\n", next_task->id);
-            #endif
-
-            int tempo = systime();
-
-            next_task->activations++;
+            
             //Se não conseguiu trocar a tarefa da uma mensagem de erro
             //e aborta o programa
+            next_task->activations++;
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
-            next_task->processor_time += (systime() - tempo);
 
             //Verifica o estado da tarefa após executar
             switch (next_task->status){
@@ -378,6 +368,8 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg) {
  */
 int task_switch (task_t *task) {
 
+    
+
     #ifdef DEBUG
     printf("INICIO: task_switch(): trocando contexto %d -> %d\n", current_task->id, task->id);
     #endif
@@ -397,7 +389,6 @@ int task_switch (task_t *task) {
         fprintf(stderr, "Erro ao trocar contexto\n");
         return -1;
     }
-
     return 0;
 }
 
@@ -471,10 +462,6 @@ int task_id(){
  */
 void task_yield() {
 
-    #ifdef DEBUG
-    printf("task_yield(): tarefa atual: %d\n", current_task->id);
-    queue_print("[",(queue_t*)(ready_tasks),print_elem);
-    #endif
 
     //indica que a task main esta parada e que a task dispatcher
     //está pronta para executar 
@@ -482,7 +469,9 @@ void task_yield() {
     dispatcher_task->status = READY;
 
     //Troca o contexto
+
     task_switch(dispatcher_task);
+
 }
 
 /**
