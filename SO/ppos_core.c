@@ -47,6 +47,7 @@ void tratador () {
         //Quando chegar a 0, retorna o timer para o valor inicial e chama o task_yield()
         if (! current_task->task_timer) {
             current_task->task_timer = TASK_TIMER;
+            dispatcher_task->activations++;
             task_yield();
         }
     }
@@ -114,7 +115,7 @@ void init_struct_task(task_t *task){
 
     task->activations = 0;
     task->exec_time = systime();
-    task->processor_time = systime();
+    task->processor_time = 0;
 
 
     if (task != main_task && task != dispatcher_task)
@@ -202,14 +203,16 @@ void dispatcher () {
             printf("dispatcher() : indo para a tarefa -> %d\n", next_task->id);
             #endif
 
+            int tempo = systime();
+
+            next_task->activations++;
             //Se não conseguiu trocar a tarefa da uma mensagem de erro
             //e aborta o programa
-
             if (task_switch(next_task) < 0){
                 fprintf(stderr, "Erro ao troca para a proxima tarefa\n");
                 exit(1);
             }
-            next_task->processor_time += (systime() - next_task->processor_time);
+            next_task->processor_time += (systime() - tempo);
 
             //Verifica o estado da tarefa após executar
             switch (next_task->status){
@@ -424,7 +427,8 @@ void task_exit(int exit_code){
 
         //Uso o dispatcher_task para ficar mais claro o que estou mudando
         // dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time)
-        printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
+        dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time);
+        printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
         // dispatcher_task->processor_time += (systime() - dispatcher_task->processor_time);
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
@@ -434,8 +438,8 @@ void task_exit(int exit_code){
 
     //Caso não, retorna para a task dispatcher
     // current_task->processor_time += (systime() - current_task->processor_time);
-    current_task->exec_time += (systime() - current_task->exec_time)
-    printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
+    current_task->exec_time += (systime() - current_task->exec_time);
+    printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
