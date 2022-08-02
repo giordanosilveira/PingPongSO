@@ -1,23 +1,21 @@
+CC     = gcc
 CFLAGS = -Wall
-OBJS = pingpong-preempcao.o ppos_core.o queue.o
-DFLAGS = -g -DDEBUGESCALONADOR
 
-all: pingpong
+PROG = pingpong-contab
+OBJS = ppos_core.o queue.o
 
-pingpong: $(OBJS)
-	gcc $(DFLAGS) -o pingpong-preempcao $(CFLAGS) $(OBJS)
+.PHONY: clean purge all
 
-queue.o: queue.c
-	gcc $(CFLAGS) -c queue.c
+all: $(PROG)
 
-ppos_core.o: ppos_core.c
-	gcc $(CFLAGS) -c ppos_core.c
+%.o: %.c
+	$(CC) -c $(CFLAGS) $<
 
-pingpong-preempcao.o: pingpong-preempcao.c
-	gcc $(CFLAGS) -c pingpong-preempcao.c
+$(PROG) : % :  $(OBJS) %.o
+	$(CC) -o $@ $^
 
 clean:
-	-rm -f *~ *.o
+	rm -f *.o
 
-purge: clean
-	-rm -f pingpong-preempcao
+purge: clean  
+	rm -f $(PROG) 

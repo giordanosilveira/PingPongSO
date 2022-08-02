@@ -37,18 +37,17 @@ void print_elem (void *ptr) {
 void tratador () {
 
     global_clock++;
+    current_task->processor_time++;
 
     //Se a tarefa for preemptavel
     if (current_task->preemptable) {
 
-        current_task->processor_time++;
         //Diminui o tick dele
         current_task->task_timer--;
 
         //Quando chegar a 0, retorna o timer para o valor inicial e chama o task_yield()
         if (! current_task->task_timer) {
             current_task->task_timer = TASK_TIMER;
-            dispatcher_task->activations++;
             task_yield();
         }
     }
@@ -470,6 +469,7 @@ void task_yield() {
 
     //Troca o contexto
 
+    dispatcher_task->activations++;
     task_switch(dispatcher_task);
 
 }
