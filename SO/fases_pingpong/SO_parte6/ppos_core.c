@@ -37,6 +37,8 @@ void print_elem (void *ptr) {
 void tratador () {
 
     global_clock++;
+
+    //Aumenta o tempo da tarefa em um ms
     current_task->processor_time++;
 
     //Se a tarefa for preemptavel
@@ -415,21 +417,22 @@ void task_exit(int exit_code){
     //Caso a tarefa finalizada seja o dispatcher, retorna para a main
     if (current_task == dispatcher_task) {
 
-        //Uso o dispatcher_task para ficar mais claro o que estou mudando
-        // dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time)
+        // O tempo total do dispatcher. tempo da criação - tempo da finalização
         dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time);
-        printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
-        // dispatcher_task->processor_time += (systime() - dispatcher_task->processor_time);
+        printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations\n", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
+        
+        //Uso o dispatcher_task para ficar mais claro o que estou mudando
         if (task_switch(main_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);
         }
     }
 
-    //Caso não, retorna para a task dispatcher
-    // current_task->processor_time += (systime() - current_task->processor_time);
+    // O tempo total de uma tarefa qualquer. Tcriação - Texit
     current_task->exec_time += (systime() - current_task->exec_time);
-    printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
+    printf("Task %d exit: execution time %d ms, processor time  %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
+    
+    //Caso não, retorna para a task dispatcher
     if (task_switch(dispatcher_task) < 0){
             fprintf(stderr, "Não foi possível troca a tarefa\n");
             exit(1);

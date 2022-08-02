@@ -1,7 +1,7 @@
 CC     = gcc
 CFLAGS = -Wall
 
-PROG = pingpong-contab
+PROG = pingpong-contab-prio
 OBJS = ppos_core.o queue.o
 
 .PHONY: clean purge all
