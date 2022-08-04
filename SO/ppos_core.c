@@ -293,14 +293,14 @@ void ppos_init () {
     //inicializa estrutas internas da task main e dispatcher
     init_struct_task(main_task);
 
+    ready_tasks = NULL;
+
     user_tasks++;
     queue_append((queue_t**)(&ready_tasks), (queue_t*)(main_task));
     //queue_print("ahg ", (queue_t*)(ready_tasks), print_elem);
     
     task_create(dispatcher_task, dispatcher, NULL);
     
-    ready_tasks = NULL;
-
     //tarefa atual é a main
     current_task = main_task;
 
