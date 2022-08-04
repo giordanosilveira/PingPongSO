@@ -187,7 +187,7 @@ void dispatcher () {
 
     //Enquanto tem tarefa dos usuário para executar
     while (user_tasks) {
-        
+    
         //seleciona a próxima tarefa
         next_task = escalonador();
 
