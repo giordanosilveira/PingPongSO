@@ -26,7 +26,7 @@ void print_elem (void *ptr) {
    if (!elem)
       return ;
 
-   printf ("%d ", elem->dinamic_prio) ;
+   printf ("%d ", elem->id) ;
    //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
 }
 
@@ -119,8 +119,7 @@ void init_struct_task(task_t *task){
     task->exec_time = systime();
     task->processor_time = 0;
 
-
-    if (task != main_task && task != dispatcher_task)
+    if (task != dispatcher_task)
         task->preemptable = YES;
     else
         task->preemptable = NO;
@@ -144,9 +143,7 @@ task_t* escalonador () {
     task_t *aux = ready_tasks;
     task_t *task_min_priority = aux;
 
-    #ifdef DEBUG
-    printf("INICIO escalonador(): ultima tarefa -> %d\n", old_task->id);
-    #endif
+    
 
     //Percorre a fila de tarefas e procura a menos prioritária
     aux = ready_tasks;
@@ -295,6 +292,11 @@ void ppos_init () {
     
     //inicializa estrutas internas da task main e dispatcher
     init_struct_task(main_task);
+
+    user_tasks++;
+    queue_append((queue_t**)(&ready_tasks), (queue_t*)(main_task));
+    //queue_print("ahg ", (queue_t*)(ready_tasks), print_elem);
+    
     task_create(dispatcher_task, dispatcher, NULL);
     
     ready_tasks = NULL;
@@ -304,6 +306,8 @@ void ppos_init () {
 
     init_signal_handler();
     init_timer();
+
+    task_yield();
 }
 
 /**
@@ -427,15 +431,18 @@ void task_exit(int exit_code){
             exit(1);
         }
     }
+    else {
 
-    // O tempo total de uma tarefa qualquer. Tcriação - Texit
-    current_task->exec_time += (systime() - current_task->exec_time);
-    printf("Task %d exit: execution time %d ms, processor time  %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
-    
-    //Caso não, retorna para a task dispatcher
-    if (task_switch(dispatcher_task) < 0){
-            fprintf(stderr, "Não foi possível troca a tarefa\n");
-            exit(1);
+        // O tempo total de uma tarefa qualquer. Tcriação - Texit
+        current_task->exec_time += (systime() - current_task->exec_time);
+        printf("Task %d exit: execution time %d ms, processor time  %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
+
+        //Caso não, retorna para a task dispatcher
+        if (task_switch(dispatcher_task) < 0){
+                fprintf(stderr, "Não foi possível troca a tarefa\n");
+                exit(1);
+        }
+
     }
 }
 
@@ -463,6 +470,10 @@ int task_id(){
  * 
  */
 void task_yield() {
+
+    #ifdef DEBUGESCALONADOR1
+    queue_print("fila escalonador ->", (queue_t*)ready_tasks, print_elem);
+    #endif
 
 
     //indica que a task main esta parada e que a task dispatcher
