@@ -256,6 +256,64 @@ int task_getprio(task_t * task){
 }
 
 
+void task_suspend(task_t **queue){
+
+    if (queue_remove((queue_t**)(&ready_tasks), (queue_t *)(current_task)) < 0) {
+        fprintf(stderr, "task_suspend(): "); 
+        fprintf(stderr, "A tarefa %d não se evncontra na fila de tarefa de prontas\n", current_task->id);
+        exit(1);
+    }
+
+    current_task->status = STOP;
+
+    if (queue_append((queue_t **)(queue), (queue_t*)(current_task)) < 0) {
+        fprintf(stderr, "task_suspend(): "); 
+        fprintf(stderr, "A tarefa %d não pode ser colocada na fila\n", current_task->id);
+        exit(1);
+    }
+
+    task_yield();
+}
+
+
+void task_resume(task_t *task, task_t **queue){
+
+    if (! queue) {
+        fprintf(stderr, "task_resume(): "); 
+        fprintf(stderr, "A fila de tarefas não existe\n");
+        exit(1);
+    }
+
+    if (queue_remove((queue_t **)(queue), (queue_t*)(task)) < 0){
+        fprintf(stderr, "task_resume(): "); 
+        fprintf(stderr, "A tarefa %d não pode ser retirada da fila\n", task->id);
+        exit(1);
+    }
+
+    task->status = READY;
+
+    if (queue_append((queue_t **)(&ready_tasks), (queue_t*)(task)) < 0) {
+        fprintf(stderr, "task_resume(): "); 
+        fprintf(stderr, "A tarefa %d não pode ser colocada na fila\n", task->id);
+        exit(1);
+    }
+
+}
+
+
+int task_join(task_t *task){
+
+    if (! task){
+        fprintf(stderr, "A tarefa é nula\n");
+        return -1;
+    }
+
+    task_suspend(&task->suspended_task);
+
+    return task->id;
+
+}
+
 
 /**
  * @brief Inicializa as variáveis 
@@ -410,7 +468,7 @@ void task_exit(int exit_code){
     #endif
 
     //Se foi finalizada com um zero a tarefa finalizou
-    if (exit_code == 0) {
+    if (exit_code >= 0) {
         current_task->status = FINISHED;
         user_tasks--;
     }
@@ -432,6 +490,12 @@ void task_exit(int exit_code){
         }
     }
     else {
+
+        task_t *aux = current_task->suspended_task;
+        for (int i = 0; i < queue_size((queue_t *)(current_task->suspended_task)); i++){
+            task_resume(aux, &current_task->suspended_task);
+            aux = aux->next;
+        }
 
         // O tempo total de uma tarefa qualquer. Tcriação - Texit
         current_task->exec_time += (systime() - current_task->exec_time);
@@ -476,7 +540,7 @@ void task_yield() {
     #endif
 
 
-    //indica que a task main esta parada e que a task dispatcher
+    //indica que a task atual esta parada e que a task dispatcher
     //está pronta para executar 
     current_task->status = STOP;
     dispatcher_task->status = READY;

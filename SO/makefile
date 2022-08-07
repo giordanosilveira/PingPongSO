@@ -1,7 +1,7 @@
 CC     = gcc
 CFLAGS = -Wall -g
 
-PROG = pingpong-maintask
+PROG = pingpong-join
 OBJS = ppos_core.o queue.o
 
 .PHONY: clean purge all
