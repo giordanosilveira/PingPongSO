@@ -258,61 +258,76 @@ int task_getprio(task_t * task){
 
 void task_suspend(task_t **queue){
 
+    // Remove a tarefa atual da fila de prontas
     if (queue_remove((queue_t**)(&ready_tasks), (queue_t *)(current_task)) < 0) {
         fprintf(stderr, "task_suspend(): "); 
         fprintf(stderr, "A tarefa %d não se evncontra na fila de tarefa de prontas\n", current_task->id);
         exit(1);
     }
 
+    // Indica que ela está parada
     current_task->status = STOP;
 
+    // Coloca ela na fila de suspensas
     if (queue_append((queue_t **)(queue), (queue_t*)(current_task)) < 0) {
         fprintf(stderr, "task_suspend(): "); 
         fprintf(stderr, "A tarefa %d não pode ser colocada na fila\n", current_task->id);
         exit(1);
     }
 
+    // Chama o dispatcher
     task_yield();
 }
 
 
 void task_resume(task_t *task, task_t **queue){
 
+
+    // Verifica se a tarefa é nula
     if (! queue) {
         fprintf(stderr, "task_resume(): "); 
         fprintf(stderr, "A fila de tarefas não existe\n");
         exit(1);
     }
 
+    // Remove ela da fila indicada
     if (queue_remove((queue_t **)(queue), (queue_t*)(task)) < 0){
         fprintf(stderr, "task_resume(): "); 
         fprintf(stderr, "A tarefa %d não pode ser retirada da fila\n", task->id);
         exit(1);
     }
 
+    // Indica que ela está pronta para executar
     task->status = READY;
 
+    // Coloca ela na fila de prontas
     if (queue_append((queue_t **)(&ready_tasks), (queue_t*)(task)) < 0) {
         fprintf(stderr, "task_resume(): "); 
         fprintf(stderr, "A tarefa %d não pode ser colocada na fila\n", task->id);
         exit(1);
     }
 
+
 }
 
 
 int task_join(task_t *task){
 
+    // Verifica se a tarefa é nula
     if (! task){
         fprintf(stderr, "A tarefa é nula\n");
         return -1;
     }
 
-    task_suspend(&task->suspended_task);
+    // Caso ela não esteja finalizada, coloca a currente_task
+    // na fila de espera indicada por task
+    if (! (task->status == FINISHED))
+        task_suspend(&task->suspended_task);
 
     return task->id;
 
 }
+
 
 
 /**
