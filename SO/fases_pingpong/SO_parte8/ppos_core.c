@@ -10,9 +10,6 @@ task_t *main_task;
 task_t *old_task;
 task_t *dispatcher_task;
 task_t *ready_tasks;
-task_t *suspended_queue;
-
-unsigned int conta_20_ms;
 unsigned int global_clock;
 
 struct sigaction action;
@@ -135,18 +132,6 @@ void init_struct_task(task_t *task){
 
 }
 
-void awake_tasks(){
-
-    task_t *aux = suspended_queue;
-    for (int i = 0; i < queue_size((queue_t *) suspended_queue); i++){
-        if (systime() - aux->sleep_systime >= aux->sleep_time)
-            task_resume(aux, &suspended_queue);
-        aux = aux->next;
-    }
-
-}
-
-
 /**
  * @brief Escolhe a próxima tarefa a ser executada.
  * NESTE CASO, a tarefa mais prioritaria da fila (i.e menor valor).
@@ -200,20 +185,12 @@ void dispatcher () {
 
     task_t *next_task;
 
-    
-
     //Enquanto tem tarefa dos usuário para executar
     while (user_tasks) {
-        conta_20_ms++;
-
+    
         //seleciona a próxima tarefa
         next_task = escalonador();
 
-        if (conta_20_ms >= 5) {
-            printf("%d\n", systime());
-            conta_20_ms = 0;
-            // awake_tasks();
-        }
         //verifica se ela existe
         if (next_task) {
             
@@ -338,21 +315,6 @@ int task_join(task_t *task){
 }
 
 
-void task_sleep(int t) {
-
-    if (! current_task) {
-        fprintf(stderr, "task_sleep(): A tarefa atual é nula\n");
-        return;
-    }
-
-    current_task->sleep_time = t;
-    current_task->sleep_systime = systime();
-    task_suspend(&suspended_queue);
-    task_yield();
-
-}
-
-
 /**
  * @brief Inicializa as variáveis 
  * do Sistema Operacional.
@@ -402,8 +364,6 @@ void ppos_init () {
 
     init_signal_handler();
     init_timer();
-
-    conta_20_ms = 0;
 
     task_yield();
 }
