@@ -1,12 +1,16 @@
 CC     = gcc
 CFLAGS = -Wall -g
+DEBUGFLASGS = -DDEBUGRESUME
 
-PROG = pingpong-join
+PROG = pingpong-sleep
 OBJS = ppos_core.o queue.o
 
 .PHONY: clean purge all
 
 all: $(PROG)
+
+debug: CFLAGS += $(DEBUGFLASGS)
+debug: all
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $<

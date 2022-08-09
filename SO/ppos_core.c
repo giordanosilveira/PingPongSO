@@ -12,7 +12,6 @@ task_t *dispatcher_task;
 task_t *ready_tasks;
 task_t *suspended_queue;
 
-unsigned int conta_20_ms;
 unsigned int global_clock;
 
 struct sigaction action;
@@ -138,10 +137,18 @@ void init_struct_task(task_t *task){
 void awake_tasks(){
 
     task_t *aux = suspended_queue;
+    task_t *next;
+
     for (int i = 0; i < queue_size((queue_t *) suspended_queue); i++){
-        if (systime() - aux->sleep_systime >= aux->sleep_time)
+        if (systime() - aux->sleep_systime >= aux->sleep_time) {
+            //printf("aqui %d\n", aux->id);
+            next = aux->next;
             task_resume(aux, &suspended_queue);
-        aux = aux->next;
+            aux = next;
+        }
+        else
+            aux = aux->next;
+        
     }
 
 }
@@ -158,29 +165,35 @@ task_t* escalonador () {
     task_t *aux = ready_tasks;
     task_t *task_min_priority = aux;
 
-    
+    #ifdef DEBUGESCALONADOR
+    queue_print("fila escalonador", (queue_t*)ready_tasks, print_elem);
+    #endif
 
     //Percorre a fila de tarefas e procura a menos prioritária
     aux = ready_tasks;
 
-    //Sempre verifica a próxima tarefa
-    while (aux->next != ready_tasks){
-        if (aux->next->dinamic_prio < task_min_priority->dinamic_prio){
-            task_min_priority = aux->next;
-        }   
-        aux = aux->next;
-    }
+    if (aux) {
+        //Sempre verifica a próxima tarefa
+        while (aux->next != ready_tasks){
+            if (aux->next->dinamic_prio < task_min_priority->dinamic_prio){
+                task_min_priority = aux->next;
+            }   
+            aux = aux->next;
+        }
 
-    //Percorre a fila e diminui as prioridade dinâmicas das tarefas
-    aux = ready_tasks;
-    while (aux->next != ready_tasks) {
-        if (aux->next != task_min_priority)
-            aux->next->dinamic_prio += TASK_AGING; 
-        aux = aux->next;
-    }
-    //Diminuição da prioridade da primeira tarefa
-    if (aux->next != task_min_priority) {
-        aux->next->dinamic_prio += TASK_AGING;
+        //Percorre a fila e diminui as prioridade dinâmicas das tarefas
+        aux = ready_tasks;
+        while (aux->next != ready_tasks) {
+            if (aux->next != task_min_priority)
+                aux->next->dinamic_prio += TASK_AGING; 
+            aux = aux->next;
+        }
+        //Diminuição da prioridade da primeira tarefa
+        if (aux->next != task_min_priority) {
+            aux->next->dinamic_prio += TASK_AGING;
+        }
+
+        return task_min_priority;
     }
 
 
@@ -188,7 +201,7 @@ task_t* escalonador () {
     #ifdef DEBUGESCALONADOR
     printf("escalonador() tarefa->%d\n", task_min_priority->id);
     #endif
-    return task_min_priority;;
+    return NULL;
 
 }
 
@@ -204,16 +217,16 @@ void dispatcher () {
 
     //Enquanto tem tarefa dos usuário para executar
     while (user_tasks) {
-        conta_20_ms++;
 
-        //seleciona a próxima tarefa
         next_task = escalonador();
+        
+        awake_tasks();
+        #ifdef DEBUGRESUME
+        queue_print("fila no resume", (queue_t*)ready_tasks, print_elem);
+        #endif
+        //seleciona a próxima tarefa
 
-        if (conta_20_ms >= 5) {
-            printf("%d\n", systime());
-            conta_20_ms = 0;
-            // awake_tasks();
-        }
+        
         //verifica se ela existe
         if (next_task) {
             
@@ -301,6 +314,10 @@ void task_suspend(task_t **queue){
 
 void task_resume(task_t *task, task_t **queue){
 
+    #ifdef DEBUGRESUME
+    queue_print("fila no resume", (queue_t*)suspended_queue, print_elem);
+    #endif
+
     if (! queue) {
         fprintf(stderr, "task_resume(): "); 
         fprintf(stderr, "A fila de tarefas não existe\n");
@@ -321,6 +338,10 @@ void task_resume(task_t *task, task_t **queue){
         exit(1);
     }
 
+    #ifdef DEBUGRESUME
+    queue_print("fila no resume", (queue_t*)ready_tasks, print_elem);
+    #endif
+
 }
 
 
@@ -331,7 +352,8 @@ int task_join(task_t *task){
         return -1;
     }
 
-    task_suspend(&task->suspended_task);
+    if (! (task->status == FINISHED))
+        task_suspend(&task->suspended_task);
 
     return task->id;
 
@@ -403,7 +425,6 @@ void ppos_init () {
     init_signal_handler();
     init_timer();
 
-    conta_20_ms = 0;
 
     task_yield();
 }
