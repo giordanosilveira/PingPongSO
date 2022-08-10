@@ -1,5 +1,5 @@
-# Sleep
-O objetivo deste projeto é contruir uma função denominada **task_sleep**, que permite que uma tarefa espere a conclusão de outra tarefa, de forma similar à chamada POSIX **pthread_join**.
+# Operador Join
+O objetivo deste projeto é modificar seu sistema de forma que a função main seja vista e escalonada como uma tarefa idêntica às demais tarefas (**ping**, **pong**, etc).
 
 ## Descrição
 Eu não faço nenhuma outra função neste projeto. Em relação ao P6, a única coisa que mudo
