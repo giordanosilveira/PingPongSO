@@ -659,20 +659,13 @@ int sem_down (semaphore_t *s) {
 
     enter_cs(&s->lock);
     s->count--;
-    leave_cs(&s->lock);
+    
     if (s->count < 0) {
-        #ifdef DEBUGSEMAFORO
-        printf("DOWN usertasks ->%d\n", user_tasks);
-        queue_print("fila de tarefas prontas ->", (queue_t*)ready_tasks, print_elem);
-        queue_print("fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
-        printf("tarefa atual down-> %d\n", current_task->id);
-        #endif
-
-        task_suspend(&s->semaphore_queue);
-        #ifdef DEBUGSEMAFORO
-        queue_print("DOWN: fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
-        #endif
+        queue_remove((queue_t**)&ready_tasks, (queue_t*)current_task);
+        current_task->status = STOP;
+        queue_append((queue_t**)&s->semaphore_queue, (queue_t*)current_task);
     }
+    leave_cs(&s->lock);
     return 0;
 
 }

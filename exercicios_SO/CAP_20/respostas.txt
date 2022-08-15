@@ -1,0 +1,30 @@
+Q2)
+void writechar(char c) {
+
+    while (in(status) == BUSY);
+
+    out(control, WRITE);
+    out(data_out, c);
+    
+    // pulso in STROBE
+
+    // Ack
+
+    while (in(status) != IDLE);
+
+}
+char readchar() {
+
+    while (in(status) == BUSY);
+    
+    out(control, READ);
+    char c = in(data_in);
+
+    // Processa o dado
+
+    // pulso in STROBE
+
+    // Ack
+
+    while (in(status) == BUSY);
+}
