@@ -23,13 +23,13 @@ int current_id = 0;
 
 // imprime na tela um elemento da fila (chamada pela função queue_print)
 void print_elem (void *ptr) {
-   task_t *elem = ptr ;
+    task_t *elem = ptr ;
 
-   if (!elem)
-      return ;
+    if (!elem)
+       return ;
 
-   printf ("%d ", elem->id) ;
-   //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
+    printf ("%d ", elem->id) ;
+    //elem->next ? printf ("%d", elem->next->dinamic_prio) : printf ("*") ;
 }
 
 /**
@@ -246,6 +246,7 @@ void dispatcher () {
                     //Retira ela da fila
                     if(! queue_remove((queue_t **)(&ready_tasks), (queue_t*)(next_task)))
                         exit(1);
+                    free(next_task->context.uc_stack.ss_sp);
                     break;
                 default:
                     next_task->dinamic_prio = next_task->priority;
@@ -552,7 +553,7 @@ void task_exit(int exit_code){
 
         // O tempo total do dispatcher. tempo da criação - tempo da finalização
         dispatcher_task->exec_time += (systime() - dispatcher_task->exec_time);
-        printf("Task %d exit: execution time %d ms, processor time     %d ms, %d activations\n", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
+        printf("Task %d exit: running time %d ms, cpu time %d ms, %d activations\n", task_id(), dispatcher_task->exec_time, dispatcher_task->processor_time, dispatcher_task->activations);
         
         //Uso o dispatcher_task para ficar mais claro o que estou mudando
         if (task_switch(main_task) < 0){
@@ -570,7 +571,7 @@ void task_exit(int exit_code){
 
         // O tempo total de uma tarefa qualquer. Tcriação - Texit
         current_task->exec_time += (systime() - current_task->exec_time);
-        printf("Task %d exit: execution time %d ms, processor time  %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
+        printf("Task %d exit: running time %d ms, cpu time     %d ms, %d activations\n", task_id(), current_task->exec_time, current_task->processor_time, current_task->activations);
 
         //Caso não, retorna para a task dispatcher
         if (task_switch(dispatcher_task) < 0){
@@ -630,4 +631,94 @@ void task_yield() {
  */
 unsigned int systime () {
     return global_clock;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+void enter_cs (int *lock) {
+    while (__sync_fetch_and_or(lock, 1));
+}
+
+void leave_cs (int *lock) {
+    (*lock) = 0;
+}
+
+int sem_create (semaphore_t *s, int value) {
+
+    s->count = value;
+    s->semaphore_queue = NULL;
+    s->lock = 0;
+    s->alive = VIVO;
+
+    return 0;
+}
+
+int sem_down (semaphore_t *s) {
+    
+    if (!s || !s->alive)
+        return -1;
+
+    enter_cs(&s->lock);
+    s->count--;
+    leave_cs(&s->lock);
+    if (s->count < 0) {
+        #ifdef DEBUGSEMAFORO
+        printf("DOWN usertasks ->%d\n", user_tasks);
+        queue_print("fila de tarefas prontas ->", (queue_t*)ready_tasks, print_elem);
+        queue_print("fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
+        printf("tarefa atual down-> %d\n", current_task->id);
+        #endif
+
+        task_suspend(&s->semaphore_queue);
+        #ifdef DEBUGSEMAFORO
+        queue_print("DOWN: fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
+        #endif
+    }
+    return 0;
+
+}
+
+int sem_up (semaphore_t *s) {
+
+    if (!s || !s->alive)
+        return -1;
+
+    enter_cs(&s->lock);
+    #ifdef DEBUGSEMAFORO
+        printf("UP tarefa atual -> %d\n", current_task->id);
+    #endif
+    s->count++;
+    leave_cs(&s->lock);
+    
+    if (s->count <= 0) {
+        #ifdef DEBUGSEMAFORO
+            printf("UP usertasks ->%d\n", user_tasks);
+            printf("UP: Acordando a tarefa %d\n", s->semaphore_queue->id);
+            queue_print("UP: fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
+            printf("UP: tarefa atual down-> %d\n", current_task->id);
+        #endif
+        task_resume(s->semaphore_queue, &s->semaphore_queue);
+        #ifdef DEBUGSEMAFORO
+        queue_print("UP: fila de tarefas prontas ->", (queue_t*)ready_tasks, print_elem);
+        #endif
+    }
+    return 0;
+
+}
+int sem_destroy (semaphore_t *s) {
+
+    if (!s || !s->alive)
+        return -1;
+
+    //enter_cs(&s->lock);
+    task_t *next = s->semaphore_queue;
+    while (next) {
+        task_resume(next, &s->semaphore_queue);
+        next = s->semaphore_queue;
+    }
+
+    s->alive = MORTO;
+    s = NULL;
+    //leave_cs(&s->lock);
+    return 0;
+
 }

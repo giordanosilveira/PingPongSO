@@ -1,8 +1,8 @@
 CC     = gcc
 CFLAGS = -Wall -g
-DEBUGFLASGS = -DDEBUGRESUME
+DEBUGFLASGS = -DDEBUGSEMAFORO
 
-PROG = pingpong-sleep
+PROG = pingpong-racecond
 OBJS = ppos_core.o queue.o
 
 .PHONY: clean purge all
