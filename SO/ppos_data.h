@@ -26,6 +26,7 @@
 #define READY 1
 #define STOP 2
 #define FINISHED 3
+#define SUSPEND 4
 
 // Estrutura que define um Task Control Block (TCB)
 typedef struct task_t

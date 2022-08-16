@@ -302,7 +302,7 @@ void task_suspend(task_t **queue){
     }
 
     // Indica que ela está parada
-    current_task->status = STOP;
+    current_task->status = SUSPEND;
 
     // Coloca ela na fila de suspensas
     if (queue_append((queue_t **)(queue), (queue_t*)(current_task)) < 0) {
@@ -376,12 +376,13 @@ void task_sleep(int t) {
     // Define algumas variáveis
     current_task->sleep_time = t;
     current_task->sleep_systime = systime();
+    current_task->status = SUSPEND;
     
     // Bota ela para dormir na fila de suspensas
     task_suspend(&suspended_queue);
 
     // Chama o dispatcher
-    task_yield();
+    //task_yield();
 
 }
 
@@ -613,8 +614,11 @@ void task_yield() {
 
 
     //indica que a task atual esta parada e que a task dispatcher
-    //está pronta para executar 
-    current_task->status = STOP;
+    //está pronta para executar
+
+    if (current_task->status != SUSPEND)
+        current_task->status = STOP;
+
     dispatcher_task->status = READY;
 
     //Troca o contexto
@@ -659,13 +663,20 @@ int sem_down (semaphore_t *s) {
 
     enter_cs(&s->lock);
     s->count--;
-    
+    leave_cs(&s->lock);
+    queue_print("fila sem_down ->", (queue_t*)s->semaphore_queue, print_elem);
+    queue_print("fila sem_down ready_task ->", (queue_t*)ready_tasks, print_elem);
     if (s->count < 0) {
+        printf("sem_down : current_task -> %d\n", current_task->id);
         queue_remove((queue_t**)&ready_tasks, (queue_t*)current_task);
-        current_task->status = STOP;
+        current_task->status = SUSPEND;
         queue_append((queue_t**)&s->semaphore_queue, (queue_t*)current_task);
     }
-    leave_cs(&s->lock);
+    printf("aqui2\n");
+
+    if (current_task->status == SUSPEND)
+        task_yield();
+
     return 0;
 
 }
@@ -676,23 +687,14 @@ int sem_up (semaphore_t *s) {
         return -1;
 
     enter_cs(&s->lock);
-    #ifdef DEBUGSEMAFORO
-        printf("UP tarefa atual -> %d\n", current_task->id);
-    #endif
     s->count++;
     leave_cs(&s->lock);
     
+    queue_print("fila sem_up ->", (queue_t*)s->semaphore_queue, print_elem);
+    queue_print("fila sem_up ready_task ->", (queue_t*)ready_tasks, print_elem);
     if (s->count <= 0) {
-        #ifdef DEBUGSEMAFORO
-            printf("UP usertasks ->%d\n", user_tasks);
-            printf("UP: Acordando a tarefa %d\n", s->semaphore_queue->id);
-            queue_print("UP: fila do semaforo ->", (queue_t*)s->semaphore_queue, print_elem);
-            printf("UP: tarefa atual down-> %d\n", current_task->id);
-        #endif
+        printf("sem_up : tarefa liberada %d\n", s->semaphore_queue->id);
         task_resume(s->semaphore_queue, &s->semaphore_queue);
-        #ifdef DEBUGSEMAFORO
-        queue_print("UP: fila de tarefas prontas ->", (queue_t*)ready_tasks, print_elem);
-        #endif
     }
     return 0;
 

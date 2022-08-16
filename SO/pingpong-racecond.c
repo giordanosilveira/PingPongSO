@@ -10,7 +10,7 @@
 #include "queue.h"
 
 #define NUMTASKS 30
-#define NUMSTEPS 100000
+#define NUMSTEPS 1000000
 
 task_t task[NUMTASKS] ;
 semaphore_t  s ;
@@ -26,9 +26,10 @@ void taskBody(void *id)
     // incrementa contador (seção crítica)
     sem_down (&s) ;
     soma += 1 ;
-    //printf("soma %ld\n", soma);
+    printf("soma %ld contador semaforo %d\n", soma, s.count);
     sem_up (&s) ;
   }
+  //printf("saí\n");
   task_exit (0) ;
 }
 int main (int argc, char *argv[])
@@ -50,9 +51,9 @@ int main (int argc, char *argv[])
     task_create (&task[i], taskBody, "Task") ;
 
   // espera um pouco e libera o semáforo
+  printf("oi\n");
   task_sleep (20) ;
   sem_up (&s) ;
-  printf("oi\n");
 
   // aguarda as tarefas encerrarem
   for (i=0; i<NUMTASKS; i++)
