@@ -10,7 +10,7 @@
 #include "queue.h"
 
 #define NUMTASKS 30
-#define NUMSTEPS 1000000
+#define NUMSTEPS 100000
 
 task_t task[NUMTASKS] ;
 semaphore_t  s ;
@@ -26,7 +26,7 @@ void taskBody(void *id)
     // incrementa contador (seção crítica)
     sem_down (&s) ;
     soma += 1 ;
-    printf("soma %ld contador semaforo %d\n", soma, s.count);
+    //printf("soma %ld contador semaforo %d\n", soma, s.count);
     sem_up (&s) ;
   }
   //printf("saí\n");

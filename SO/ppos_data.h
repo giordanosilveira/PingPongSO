@@ -59,7 +59,7 @@ typedef struct
 {
     int count;
     int alive;
-    int lock;
+    //int lock;
     task_t *semaphore_queue;
 
 } semaphore_t ;
