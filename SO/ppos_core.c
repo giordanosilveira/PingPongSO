@@ -664,10 +664,11 @@ int sem_down (semaphore_t *s) {
     enter_cs(&s->lock);
     s->count--;
     leave_cs(&s->lock);
-    queue_print("fila sem_down ->", (queue_t*)s->semaphore_queue, print_elem);
-    queue_print("fila sem_down ready_task ->", (queue_t*)ready_tasks, print_elem);
+    printf("sem DOWN() : current_task -> %d\n", current_task->id);
+    printf("SEM DOWN(): contador -> %d\n", s->count);
+    queue_print("SEM DOWN() : fila sem_down ->", (queue_t*)s->semaphore_queue, print_elem);
+    queue_print("SEM DOWN() : fila sem_down ready_task ->", (queue_t*)ready_tasks, print_elem);
     if (s->count < 0) {
-        printf("sem_down : current_task -> %d\n", current_task->id);
         queue_remove((queue_t**)&ready_tasks, (queue_t*)current_task);
         current_task->status = SUSPEND;
         queue_append((queue_t**)&s->semaphore_queue, (queue_t*)current_task);
@@ -690,6 +691,7 @@ int sem_up (semaphore_t *s) {
     s->count++;
     leave_cs(&s->lock);
     
+    printf("SEM UP() : tarefa autal -> %d\n", current_task->id);
     queue_print("fila sem_up ->", (queue_t*)s->semaphore_queue, print_elem);
     queue_print("fila sem_up ready_task ->", (queue_t*)ready_tasks, print_elem);
     if (s->count <= 0) {

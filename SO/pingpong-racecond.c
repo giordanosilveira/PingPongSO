@@ -51,9 +51,9 @@ int main (int argc, char *argv[])
     task_create (&task[i], taskBody, "Task") ;
 
   // espera um pouco e libera o semáforo
-  printf("oi\n");
   task_sleep (20) ;
   sem_up (&s) ;
+  printf("UP main\n");
 
   // aguarda as tarefas encerrarem
   for (i=0; i<NUMTASKS; i++)
