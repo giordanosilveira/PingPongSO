@@ -11,7 +11,7 @@
 
 #include <ucontext.h>		// biblioteca POSIX de trocas de contexto
 
-#define STACKSIZE 64*1024
+#define STACKSIZE 128*1024
 
 #define TASK_AGING -1
 #define TEMPORIZADOR 1000

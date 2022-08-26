@@ -27,6 +27,7 @@ void taskBody(void *id)
     sem_down (&s) ;
     soma += 1 ;
     //printf("soma %ld contador semaforo %d\n", soma, s.count);
+    fprintf (stderr, "%d\n", (long) id) ;
     sem_up (&s) ;
   }
   //printf("saí\n");
@@ -48,7 +49,7 @@ int main (int argc, char *argv[])
 
   // cria as tarefas
   for (i=0; i<NUMTASKS; i++)
-    task_create (&task[i], taskBody, "Task") ;
+    task_create (&task[i], taskBody, (void*) i) ;
 
   // espera um pouco e libera o semáforo
   task_sleep (20) ;

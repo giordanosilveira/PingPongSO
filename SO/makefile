@@ -1,5 +1,5 @@
 CC     = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wextra -g
 DEBUGFLASGS = -DDEBUGSEMAFORO
 
 PROG = pingpong-racecond

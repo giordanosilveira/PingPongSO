@@ -50,7 +50,7 @@ void tratador () {
         current_task->task_timer--;
 
         //Quando chegar a 0, retorna o timer para o valor inicial e chama o task_yield()
-        if (! current_task->task_timer) {
+        if (current_task->task_timer <= 0) {
             current_task->task_timer = TASK_TIMER;
             task_yield();
         }
@@ -216,7 +216,7 @@ task_t* escalonador () {
  */
 void dispatcher () {
 
-    task_t *next_task;
+    task_t *next_task = NULL ;
 
     //Enquanto tem tarefa dos usuário para executar
     while (user_tasks) {
@@ -438,7 +438,7 @@ void ppos_init () {
     init_timer();
 
 
-    task_yield();
+//    task_yield();
 }
 
 /**
