@@ -638,8 +638,6 @@ unsigned int systime () {
 }
 
 /*---------------------------------------------------------------------------------------------*/
-int lock = 0;
-
 void enter_cs (int *lock) {
     while (__sync_fetch_and_or(lock, 1));
 }
@@ -652,6 +650,7 @@ int sem_create (semaphore_t *s, int value) {
 
     s->count = value;
     s->semaphore_queue = NULL;
+    s->lock = 0;
     s->alive = VIVO;
 
     return 0;
@@ -662,9 +661,9 @@ int sem_down (semaphore_t *s) {
     if (!s || !s->alive)
         return -1;
 
-    enter_cs(&lock);
+    enter_cs(&s->lock);
     s->count--;
-    leave_cs(&lock);
+    
     //printf("sem DOWN() : current_task -> %d\n", current_task->id);
     //printf("SEM DOWN(): contador -> %d\n", s->count);
     //queue_print("SEM DOWN() : fila sem_down ->", (queue_t*)s->semaphore_queue, print_elem);
@@ -673,8 +672,11 @@ int sem_down (semaphore_t *s) {
         queue_remove((queue_t**)&ready_tasks, (queue_t*)current_task);
         current_task->status = SUSPEND;
         queue_append((queue_t**)&s->semaphore_queue, (queue_t*)current_task);
+        leave_cs(&s->lock);
         task_yield();
     }
+    else
+        leave_cs(&s->lock);
 
     return 0;
 
@@ -685,9 +687,8 @@ int sem_up (semaphore_t *s) {
     if (!s || !s->alive)
         return -1;
 
-    enter_cs(&lock);
+    enter_cs(&s->lock);
     s->count++;
-    leave_cs(&lock);
     
     //printf("SEM UP() : tarefa autal -> %d\n", current_task->id);
     //queue_print("fila sem_up ->", (queue_t*)s->semaphore_queue, print_elem);
@@ -696,6 +697,8 @@ int sem_up (semaphore_t *s) {
         //printf("sem_up : tarefa liberada %d\n", s->semaphore_queue->id);
         task_resume(s->semaphore_queue, &s->semaphore_queue);
     }
+    leave_cs(&s->lock);
+
     return 0;
 
 }
