@@ -1,5 +1,3 @@
-//GRR20197154 Giordano Henrique Silveira
-
 #include "ppos.h"
 #include "queue.h"
 #include <stdio.h>
