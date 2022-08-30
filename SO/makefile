@@ -2,7 +2,7 @@ CC     = gcc
 CFLAGS = -Wextra -g
 DEBUGFLASGS = -DDEBUGSEMAFORO
 
-PROG = pingpong-racecond
+PROG = pingpong-prodcons
 OBJS = ppos_core.o queue.o
 
 .PHONY: clean purge all
